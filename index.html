@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>云客服工作台‑完整版(管理员增强后台)</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:"Microsoft Yahei",sans-serif;}
+        body{background:#f0f2f5;}
+        .login-wrap{
+            width:420px;
+            margin:120px auto;
+            background:#fff;
+            padding:30px;
+            border-radius:10px;
+            box-shadow:0 2px 12px #00000018;
+        }
+        .login-wrap h2{text-align:center;margin-bottom:24px;color:#1677ff;}
+        .input-item{margin:14px 0;}
+        .input-item input,textarea,select{
+            width:100%;
+            padding:12px;
+            font-size:16px;
+            border:1px solid #ddd;
+            border-radius:6px;
+        }
+        .btn{
+            width:100%;
+            padding:12px;
+            border:none;
+            border-radius:6px;
+            cursor:pointer;
+            font-size:16px;
+            margin:6px 0;
+        }
+        .btn-blue{background:#1677ff;color:#fff;}
+        .btn-green{background:#00b42a;color:white;}
+        .btn-red{background:#ff4d4f;color:white;}
+        .btn-orange{background:#faad14;color:#000;}
+        .btn-purple{background:#722ed1;color:#fff;}
+        .btn-sm{width:auto;padding:6px 12px;font-size:14px;margin:2px;}
+        .btn-admin{background:#8b5cf6;color:#fff;}
+
+        .header{
+            height:60px;
+            background:#1677ff;
+            color:white;
+            display:flex;
+            align-items:center;
+            padding:0 20px;
+            justify-content:space-between;
+        }
+        .admin-header{
+            background:#722ed1;
+        }
+        .time-box{font-size:16px;}
+        .container{display:flex;height:calc(100vh - 60px);}
+        .sidebar{width:240px;background:#fff;padding:20px;border-right:1px solid #e8e8e8;}
+        .menu-item{
+            padding:12px 10px;
+            margin:8px 0;
+            background:#f5f7fa;
+            border-radius:6px;
+            cursor:pointer;
+        }
+        .menu-item.active{background:#1677ff;color:#fff;}
+        .main{flex:1;padding:20px;overflow-y:auto;}
+        .page{display:none;}
+        .page.active{display:block;}
+        .card{
+            background:#fff;
+            padding:20px;
+            border-radius:8px;
+            margin-bottom:16px;
+            box-shadow:0 1px 3px #00000015;
+        }
+        table{width:100%;border-collapse: collapse;margin-top:12px;}
+        th,td{border:1px solid #ddd;padding:10px;text-align:center;}
+        th{background:#f5f7fa;}
+        .hide{display:none !important;}
+        .salary-row{margin:10px 0;font-size:16px;}
+        .salary-row input{padding:8px;width:150px;}
+
+        /*会话聊天样式*/
+        .chat-box{height:320px;border:1px solid #ddd;padding:10px;overflow-y:auto;background:#fafafa;}
+        .msg-left{text-align:left;margin:8px 0;}
+        .msg-right{text-align:right;margin:8px 0;}
+        .msg-bubble{display:inline-block;padding:8px 12px;border-radius:6px;max-width:70%;}
+        .msg-left .msg-bubble{background:#e8edf3;}
+        .msg-right .msg-bubble{background:#1677ff;color:#fff;}
+        .kb-item{padding:10px;border:1px solid #eee;margin:6px 0;border-radius:6px;cursor:pointer;}
+        .kb-item:hover{background:#f0f7ff;}
+
+        /*拨号键盘*/
+        .dial-keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:240px;margin:12px 0;}
+        .dial-btn{padding:14px;font-size:18px;border:1px solid #ddd;border-radius:6px;cursor:pointer;background:#f7f7f7;}
+        .call-status{padding:10px;border-radius:6px;margin:10px 0;font-weight:bold;}
+        .call-wait{background:#fff3cd;color:#856404;}
+        .call-ing{background:#d4edda;color:#155724;}
+        .call-end{background:#f8d7da;color:#721c24;}
+        .tab-row{display:flex;gap:8px;margin-bottom:12px;}
+        .admin-sub-tab{margin:10px 0;gap:6px;display:flex;flex-wrap:wrap;}
+        .edit-form-row{display:flex;gap:10px;margin:8px 0;flex-wrap:wrap;}
+    </style>
+</head>
+<body>
+
+<!--登录注册界面-->
+<div id="loginPage" class="login-wrap">
+    <h2>云客服系统登录</h2>
+    <div class="input-item">
+        <input type="text" id="phone" placeholder="客服手机号 / admin管理员账号">
+    </div>
+    <div class="input-item">
+        <input type="password" id="pwd" placeholder="登录密码">
+    </div>
+    <button class="btn btn-blue" onclick="login()">客服登录</button>
+    <button class="btn btn-green" onclick="register()">新客服注册</button>
+    <button class="btn btn-admin" onclick="adminLogin()">管理员后台登录</button>
+</div>
+
+<!--客服工作台 用户端-->
+<div id="workBench" class="hide">
+    <div class="header">
+        <h2>云客服工作台</h2>
+        <div class="time-box">
+            客服ID：<span id="curPhone"></span> | 在岗工时：<span id="workTime">0小时0分0秒</span>
+        </div>
+    </div>
+    <div class="container">
+        <div class="sidebar">
+            <div class="menu-item active" onclick="switchPage('hall',this)">班次大厅</div>
+            <div class="menu-item" onclick="switchPage('schedule',this)">我的排班</div>
+            <div class="menu-item" onclick="switchPage('wallet',this)">薪资钱包</div>
+            <div class="menu-item" onclick="switchPage('export',this)">📥导出Excel</div>
+            <div class="menu-item" onclick="switchPage('knowledge',this)">📚知识库管理</div>
+            <div class="menu-item" onclick="switchPage('chat',this)">💬会话接待</div>
+            <div class="menu-item" onclick="switchPage('callcenter',this)">📞外呼&短信中心</div>
+            <div class="menu-item" onclick="logout()">退出登录</div>
+        </div>
+        <div class="main">
+            <!--班次大厅-->
+            <div id="hall" class="page active">
+                <div class="card">
+                    <h3>上班签到</h3>
+                    <br>
+                    <button class="btn btn-green" onclick="startWork()">立即上线</button>
+                    <button class="btn btn-red" onclick="stopWork()">结束上班</button>
+                </div>
+                <div class="card">
+                    <h3>班次列表</h3>
+                    <br>
+                    <p>【可抢班次】09:00‑11:00 基础客服岗</p>
+                    <br>
+                    <p>【已报班次】暂无已报名班次</p>
+                </div>
+            </div>
+
+            <!--我的排班-->
+            <div id="schedule" class="page">
+                <div class="card">
+                    <h3>我的排班列表</h3>
+                    <table>
+                        <tr>
+                            <th>日期</th>
+                            <th>班次时段</th>
+                            <th>岗位</th>
+                            <th>状态</th>
+                        </tr>
+                        <tr>
+                            <td>2026‑08‑15</td>
+                            <td>09:00‑11:00</td>
+                            <td>在线客服</td>
+                            <td>待上岗</td>
+                        </tr>
+                        <tr>
+                            <td>2026‑08‑14</td>
+                            <td>14:00‑16:00</td>
+                            <td>在线客服</td>
+                            <td>已完成</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!--薪资钱包-->
+            <div id="wallet" class="page">
+                <div class="card">
+                    <h3>薪资设置与统计</h3>
+                    <div class="salary-row">
+                        时薪单价：<input type="number" id="hourWage" step="0.01" placeholder="元/小时" onchange="saveWage()">
+                        <button class="btn btn-orange btn-sm" onclick="saveWage()">保存时薪</button>
+                    </div>
+                    <div class="salary-row">累计工时：<span id="totalHour">0</span> 小时</div>
+                    <div class="salary-row">预估工资：<span id="totalSalary">0.00</span> 元</div>
+                </div>
+                <div class="card">
+                    <h3>历史打卡记录</h3>
+                    <table id="historyTable">
+                        <tr>
+                            <th>序号</th>
+                            <th>上班时间</th>
+                            <th>下班时间</th>
+                            <th>工时(小时)</th>
+                            <th>工资(元)</th>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!--导出Excel-->
+            <div id="export" class="page">
+                <div class="card">
+                    <h3>工时与工资导出Excel</h3>
+                    <br>
+                    <p>点击下方按钮，将所有打卡记录、工时、工资导出为Excel文件（.csv格式，Excel可直接打开）</p>
+                    <br>
+                    <button class="btn btn-green" onclick="exportExcel()">📥 导出工时工资Excel</button>
+                    <br><br>
+                    <p>导出内容包含：手机号、上班时间、下班时间、工时小时、时薪、工资金额</p>
+                </div>
+            </div>
+
+            <!--知识库管理页面-->
+            <div id="knowledge" class="page">
+                <div class="card">
+                    <h3>新增知识库词条</h3>
+                    <div class="input-item">
+                        <input type="text" id="kbTitle" placeholder="问题 / 关键词">
+                    </div>
+                    <div class="input-item">
+                        <textarea id="kbAnswer" rows="5" placeholder="标准答案回复内容"></textarea>
+                    </div>
+                    <button class="btn btn-blue" onclick="addKnowledge()">保存词条</button>
+                </div>
+                <div class="card">
+                    <h3>知识库列表（点击词条可快速复制回复）</h3>
+                    <div id="kbList"></div>
+                </div>
+            </div>
+
+            <!--会话接待聊天工作台-->
+            <div id="chat" class="page">
+                <div class="card">
+                    <h3>在线会话接待窗口</h3>
+                    <div class="chat-box" id="chatWindow"></div>
+                    <div style="margin-top:10px;display:flex;gap:8px;">
+                        <input style="flex:1" type="text" id="msgInput" placeholder="输入客服回复消息">
+                        <button class="btn btn-green btn-sm" onclick="sendMsg()">发送</button>
+                    </div>
+                    <div style="margin-top:8px;">
+                        <button class="btn btn-orange btn-sm" onclick="clearChat()">清空会话</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <h4>快捷知识库（点击词条一键发送）</h4>
+                    <div id="quickKbBox"></div>
+                </div>
+            </div>
+
+            <!--外呼&短信中心模块-->
+            <div id="callcenter" class="page">
+                <div class="tab-row">
+                    <button class="btn btn-blue btn-sm" onclick="switchCallTab('dial')">📞外呼拨号</button>
+                    <button class="btn btn-purple btn-sm" onclick="switchCallTab('sms')">✉发送短信</button>
+                    <button class="btn btn-orange btn-sm" onclick="switchCallTab('calllog')">通话记录</button>
+                    <button class="btn btn-green btn-sm" onclick="switchCallTab('smslog')">短信记录</button>
+                </div>
+                <!--拨号面板-->
+                <div id="tabDial">
+                    <div class="card">
+                        <h3>外呼拨号（点击发起唤起系统拨号）</h3>
+                        <div class="input-item">
+                            <input type="text" id="callNumber" placeholder="输入被叫手机号">
+                        </div>
+                        <div class="dial-keypad">
+                            <div class="dial-btn" onclick="appendNum('1')">1</div>
+                            <div class="dial-btn" onclick="appendNum('2')">2</div>
+                            <div class="dial-btn" onclick="appendNum('3')">3</div>
+                            <div class="dial-btn" onclick="appendNum('4')">4</div>
+                            <div class="dial-btn" onclick="appendNum('5')">5</div>
+                            <div class="dial-btn" onclick="appendNum('6')">6</div>
+                            <div class="dial-btn" onclick="appendNum('7')">7</div>
+                            <div class="dial-btn" onclick="appendNum('8')">8</div>
+                            <div class="dial-btn" onclick="appendNum('9')">9</div>
+                            <div class="dial-btn" onclick="appendNum('*')">*</div>
+                            <div class="dial-btn" onclick="appendNum('0')">0</div>
+                            <div class="dial-btn" onclick="appendNum('#')">#</div>
+                        </div>
+                        <button class="btn btn-green btn-sm" onclick="startCall()">发起外呼</button>
+                        <button class="btn btn-red btn-sm" onclick="hangCall()">挂断通话</button>
+                        <button class="btn btn-orange btn-sm" onclick="clearDial()">清空号码</button>
+                        <div id="callStatusBox"></div>
+                    </div>
+                </div>
+                <!--发送短信-->
+                <div id="tabSms" class="hide">
+                    <div class="card">
+                        <h3>发送短信（仅本地模拟，无法真实发出）</h3>
+                        <div class="input-item">
+                            <input type="text" id="smsMobile" placeholder="接收方手机号">
+                        </div>
+                        <div class="input-item">
+                            <textarea id="smsContent" rows="5" placeholder="输入短信内容"></textarea>
+                        </div>
+                        <button class="btn btn-purple btn-sm" onclick="sendSms()">发送短信</button>
+                    </div>
+                </div>
+                <!--通话记录-->
+                <div id="tabCallLog" class="hide">
+                    <div class="card">
+                        <h3>通话记录列表</h3>
+                        <table id="callLogTable">
+                            <tr>
+                                <th>时间</th>
+                                <th>被叫号码</th>
+                                <th>通话时长</th>
+                                <th>状态</th>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                <!--短信记录-->
+                <div id="tabSmsLog" class="hide">
+                    <div class="card">
+                        <h3>已发送短信记录</h3>
+                        <table id="smsLogTable">
+                            <tr>
+                                <th>发送时间</th>
+                                <th>接收号码</th>
+                                <th>短信内容</th>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!--====================管理员后台页面====================-->
+<div id="adminPanel" class="hide">
+    <div class="header admin-header">
+        <h2>🔐管理员后台 - 云客服数据管理中心</h2>
+        <div class="time-box">
+            <button class="btn btn-red btn-sm" onclick="adminLogout()">退出管理员</button>
+        </div>
+    </div>
+    <div class="container">
+        <div class="sidebar">
+            <div class="menu-item active" onclick="adminSwitchPage('adminUserList',this)">👥客服账号管理【增删查改】</div>
+            <div class="menu-item" onclick="adminSwitchPage('adminWorkRecord',this)">⏱客服打卡工时记录</div>
+            <div class="menu-item" onclick="adminSwitchPage('adminCallLog',this)">📞全部客服通话记录</div>
+            <div class="menu-item" onclick="adminSwitchPage('adminSmsLog',this)">✉全部客服短信记录</div>
+            <div class="menu-item" onclick="adminSwitchPage('adminKnowledge',this)">📚公共知识库</div>
+            <div class="menu-item" onclick="adminSwitchPage('adminExportAll',this)">📥批量导出全部数据</div>
+            <div class="menu-item" onclick="adminSwitchPage('adminSelfPwd',this)">🔑修改管理员自身密码</div>
+        </div>
+        <div class="main">
+            <!--客服账号管理 增删查改模块-->
+            <div id="adminUserList" class="page active">
+                <div class="card">
+                    <h3>新增客服账号</h3>
+                    <div class="edit-form-row">
+                        <input type="text" id="addKfPhone" placeholder="客服手机号">
+                        <input type="password" id="addKfPwd" placeholder="设置客服登录密码">
+                        <button class="btn btn-green btn-sm" onclick="adminAddWorker()">添加客服账号</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>编辑选中客服账号密码</h3>
+                    <div class="edit-form-row">
+                        <input type="text" id="editKfPhone" readonly placeholder="选中客服手机号">
+                        <input type="password" id="editKfNewPwd" placeholder="输入新登录密码">
+                        <button class="btn btn-blue btn-sm" onclick="adminUpdateWorkerPwd()">保存修改密码</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>所有注册客服账号一览</h3>
+                    <table id="adminUserTable">
+                        <tr>
+                            <th>序号</th>
+                            <th>客服手机号</th>
+                            <th>累计总工时(小时)</th>
+                            <th>设置时薪单价</th>
+                            <th>预估总收入</th>
+                            <th>操作</th>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            <!--打卡工时记录-->
+            <div id="adminWorkRecord" class="page">
+                <div class="card">
+                    <h3>全部客服上下班打卡明细记录</h3>
+                    <div class="admin-sub-tab">
+                        <input placeholder="输入客服手机号筛选记录" id="filterWorkerPhone">
+                        <button class="btn btn-blue btn-sm" onclick="refreshAllWorkerRecord()">刷新全部</button>
+                    </div>
+                    <table id="adminWorkTable">
+                        <tr>
+                            <th>客服手机号</th>
+                            <th>上班时间</th>
+                            <th>下班时间</th>
+                            <th>工时(小时)</th>
+                            <th>对应工资</th>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            <!--通话记录-->
+            <div id="adminCallLog" class="page">
+                <div class="card">
+                    <h3>所有客服外呼通话记录汇总</h3>
+                    <table id="adminCallTable">
+                        <tr>
+                            <th>客服手机号</th>
+                            <th>呼叫时间</th>
+                            <th>被叫号码</th>
+                            <th>通话计时时长</th>
+                            <th>状态</th>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            <!--短信记录-->
+            <div id="adminSmsLog" class="page">
+                <div class="card">
+                    <h3>所有客服模拟发送短信记录</h3>
+                    <table id="adminSmsTable">
+                        <tr>
+                            <th>客服手机号</th>
+                            <th>发送时间</th>
+                            <th>接收号码</th>
+                            <th>短信内容</th>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            <!--知识库-->
+            <div id="adminKnowledge" class="page">
+                <div class="card">
+                    <h3>公共知识库词条列表</h3>
+                    <div id="adminKbBox"></div>
+                </div>
+            </div>
+            <!--批量导出页面-->
+            <div id="adminExportAll" class="page">
+                <div class="card">
+                    <h3>批量导出全平台数据</h3>
+                    <br>
+                    <button class="btn btn-green" onclick="adminExportAllWorkRecord()">导出全部工时打卡记录CSV</button>
+                    <br><br>
+                    <button class="btn btn-blue" onclick="adminExportAllCall()">导出全部通话记录CSV</button>
+                    <br><br>
+                    <button class="btn btn-purple" onclick="adminExportAllSms()">导出全部短信记录CSV</button>
+                </div>
+            </div>
+            <!--管理员修改自己密码页面-->
+            <div id="adminSelfPwd" class="page">
+                <div class="card">
+                    <h3>🔑 修改管理员登录密码</h3>
+                    <div class="input-item">
+                        <input type="password" id="adminOldPwd" placeholder="输入当前旧管理员密码">
+                    </div>
+                    <div class="input-item">
+                        <input type="password" id="adminNewPwd1" placeholder="输入新管理员密码">
+                    </div>
+                    <div class="input-item">
+                        <input type="password" id="adminNewPwd2" placeholder="再次输入新密码确认">
+                    </div>
+                    <button class="btn btn-purple" onclick="changeAdminPassword()">确认修改管理员密码</button>
+                    <p style="margin-top:12px;color:#666;">⚠ 修改成功后下次登录管理员后台需要使用新密码</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    let timer = null;
+    let startTime = null;
+    let currentUser = null;
+    let callTimer=null;
+    let callStart=null;
+    let selectEditWorkerPhone = "";
+
+    //读取管理员账号密码本地存储，没有就初始化默认
+    function getAdminInfo(){
+        let data = localStorage.getItem("adminInfo");
+        if(!data){
+            let defaultAdmin = {account:"admin",pwd:"admin123"};
+            localStorage.setItem("adminInfo",JSON.stringify(defaultAdmin));
+            return defaultAdmin;
+        }
+        return JSON.parse(data);
+    }
+
+    //==== 用户账号、工时工资 原有函数 ====
+    function getUserList(){
+        let data = localStorage.getItem("kfUser");
+        return data ? JSON.parse(data) : [];
+    }
+    function saveUserList(arr){
+        localStorage.setItem("kfUser",JSON.stringify(arr));
+    }
+    function getHistory(userPhone){
+        let key = "kfHistory_" + userPhone;
+        let data = localStorage.getItem(key);
+        return data ? JSON.parse(data) : [];
+    }
+    function saveHistory(userPhone,arr){
+        let key = "kfHistory_" + userPhone;
+        localStorage.setItem(key,JSON.stringify(arr));
+    }
+    function register(){
+        let phone = document.getElementById('phone').value.trim();
+        let pwd = document.getElementById('pwd').value.trim();
+        if(!/^1[3-9]\d{9}$/.test(phone)){alert("手机号格式不正确");return;}
+        if(pwd.length<4){alert("密码至少4位");return;}
+        let list = getUserList();
+        if(list.find(x=>x.phone===phone)){alert("该手机号已注册！");return;}
+        list.push({phone:phone,pwd:pwd,totalSec:0,hourWage:0});
+        saveUserList(list);
+        alert("注册成功！现在可以登录");
+    }
+    function login(){
+        let phone = document.getElementById('phone').value.trim();
+        let pwd = document.getElementById('pwd').value.trim();
+        let list = getUserList();
+        let user = list.find(x=>x.phone===phone&&x.pwd===pwd);
+        if(!user){alert("账号或密码错误");return;}
+        currentUser = user;
+        enterWorkBench();
+    }
+    function adminLogin(){
+        let name = document.getElementById('phone').value.trim();
+        let pwd = document.getElementById('pwd').value.trim();
+        let admin = getAdminInfo();
+        if(name===admin.account && pwd===admin.pwd){
+            document.getElementById("loginPage").classList.add('hide');
+            document.getElementById("adminPanel").classList.remove('hide');
+            refreshAdminAllData();
+        }else{
+            alert("管理员账号或密码错误！");
+        }
+    }
+    function adminLogout(){
+        document.getElementById("adminPanel").classList.add('hide');
+        document.getElementById("loginPage").classList.remove('hide');
+    }
+    function enterWorkBench(){
+        document.getElementById("loginPage").classList.add('hide');
+        document.getElementById("workBench").classList.remove('hide');
+        document.getElementById("curPhone").innerText = currentUser.phone;
+        document.getElementById("hourWage").value = currentUser.hourWage || 0;
+        refreshWallet();
+        renderHistory();
+        renderKnowledge();
+        renderCallLog();
+        renderSmsLog();
+    }
+    function logout(){
+        if(timer) stopWork();
+        if(callTimer) hangCall();
+        currentUser=null;
+        document.getElementById("workBench").classList.add('hide');
+        document.getElementById("loginPage").classList.remove('hide');
+    }
+    function switchPage(pageId,menuDom){
+        document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+        document.querySelectorAll('.menu-item').forEach(m=>m.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
+        if(menuDom) menuDom.classList.add('active');
+        if(pageId==='wallet') renderHistory();
+        if(pageId==='knowledge') renderKnowledge();
+        if(pageId==='chat') renderKnowledge();
+        if(pageId==='callcenter'){renderCallLog();renderSmsLog();}
+    }
+    function adminSwitchPage(pageId,menuDom){
+        document.querySelectorAll('#adminPanel .page').forEach(p=>p.classList.remove('active'));
+        document.querySelectorAll('#adminPanel .menu-item').forEach(m=>m.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
+        if(menuDom) menuDom.classList.add('active');
+        refreshAdminAllData();
+    }
+    function saveWage(){
+        let wage = parseFloat(document.getElementById("hourWage").value) || 0;
+        currentUser.hourWage = wage;
+        let list = getUserList();
+        let idx = list.findIndex(x=>x.phone===currentUser.phone);
+        if(idx>=0){ list[idx].hourWage=wage; saveUserList(list);}
+        refreshWallet(); renderHistory();
+        alert("时薪已保存："+wage+"元/小时");
+    }
+    function startWork(){
+        if(timer){alert("已经上线！");return;}
+        startTime = new Date();
+        timer = setInterval(updateTime,1000);
+        alert("上线成功！");
+    }
+    function stopWork(){
+        if(!timer){alert("未上线！");return;}
+        clearInterval(timer); timer=null;
+        let end = new Date();
+        let addSec = Math.floor((end-startTime)/1000);
+        let addHour = (addSec/3600).toFixed(2);
+        let history = getHistory(currentUser.phone);
+        history.push({start:formatTime(startTime),end:formatTime(end),seconds:addSec,hours:parseFloat(addHour)});
+        saveHistory(currentUser.phone,history);
+        currentUser.totalSec += addSec;
+        let list = getUserList();
+        let index = list.findIndex(x=>x.phone===currentUser.phone);
+        if(index>=0){list[index].totalSec=currentUser.totalSec;saveUserList(list);}
+        document.getElementById("workTime").innerText = "0小时0分0秒";
+        refreshWallet(); renderHistory();
+        alert("下线成功，本次工时"+addHour+"小时已保存");
+    }
+    function updateTime(){
+        let now = new Date();
+        let diffMs = now - startTime;
+        let sec = Math.floor(diffMs / 1000);
+        let h = Math.floor(sec / 3600);
+        let m = Math.floor((sec % 3600)/60);
+        let s = sec % 60;
+        document.getElementById("workTime").innerText = `${h}小时${m}分${s}秒`;
+    }
+    function refreshWallet(){
+        let h = (currentUser.totalSec / 3600).toFixed(2);
+        let wage = currentUser.hourWage || 0;
+        let salary = (h*wage).toFixed(2);
+        document.getElementById("totalHour").innerText = h;
+        document.getElementById("totalSalary").innerText = salary;
+    }
+    function renderHistory(){
+        let history = getHistory(currentUser.phone);
+        let wage = currentUser.hourWage || 0;
+        let table = document.getElementById("historyTable");
+        table.innerHTML = '<tr><th>序号</th><th>上班时间</th><th>下班时间</th><th>工时(小时)</th><th>工资(元)</th></tr>';
+        history.forEach((item,idx)=>{
+            let money = (item.hours*wage).toFixed(2);
+            let tr = document.createElement('tr');
+            tr.innerHTML = `<td>${idx+1}</td><td>${item.start}</td><td>${item.end}</td><td>${item.hours}</td><td>${money}</td>`;
+            table.appendChild(tr);
+        });
+    }
+    function formatTime(d){
+        let y=d.getFullYear();
+        m=String(d.getMonth()+1).padStart(2,'0');
+        day=String(d.getDate()).padStart(2,'0');
+        h=String(d.getHours()).padStart(2,'0');
+        min=String(d.getMinutes()).padStart(2,'0');
+        s=String(d.getSeconds()).padStart(2,'0');
+        return `${y}-${m}-${day} ${h}:${min}:${s}`;
+    }
+    function exportExcel(){
+        let history = getHistory(currentUser.phone);
+        if(history.length===0){alert("暂无打卡记录，无法导出");return;}
+        let wage = currentUser.hourWage || 0;
+        let totalHour = 0;let totalMoney = 0;
+        let csv = "\uFEFF";
+        csv += "序号,手机号,上班时间,下班时间,工时(小时),时薪(元),工资(元)\n";
+        history.forEach((item,idx)=>{
+            let money = (item.hours*wage).toFixed(2);
+            totalHour += item.hours; totalMoney += parseFloat(money);
+            csv += `${idx+1},${currentUser.phone},${item.start},${item.end},${item.hours},${wage},${money}\n`;
+        });
+        csv += `\n合计,,,,${totalHour.toFixed(2)},,${totalMoney.toFixed(2)}\n`;
+        let blob = new Blob([csv],{type:'text/csv;charset=utf-8;'});
+        let url = URL.createObjectURL(blob);
+        let a = document.createElement('a');
+        a.href = url;
+        a.download = `工时工资表_${currentUser.phone}_${formatTime(new Date()).replace(/[: ]/g,'-')}.csv`;
+        document.body.appendChild(a);a.click();
+        document.body.removeChild(a);URL.revokeObjectURL(url);
+        alert("导出成功！");
+    }
+
+    //==== 知识库模块 ====
+    function getKnowledgeList(){
+        let data=localStorage.getItem("kfKnowledge");
+        return data?JSON.parse(data):[];
+    }
+    function saveKnowledgeList(arr){
+        localStorage.setItem("kfKnowledge",JSON.stringify(arr));
+    }
+    function addKnowledge(){
+        let title=document.getElementById("kbTitle").value.trim();
+        let answer=document.getElementById("kbAnswer").value.trim();
+        if(!title||!answer){alert("关键词和回复内容不能为空");return;}
+        let list=getKnowledgeList();
+        list.push({id:Date.now(),title:title,answer:answer});
+        saveKnowledgeList(list);
+        document.getElementById("kbTitle").value="";
+        document.getElementById("kbAnswer").value="";
+        renderKnowledge();
+        alert("知识库词条添加成功");
+    }
+    function renderKnowledge(){
+        let list=getKnowledgeList();
+        let html="";
+        list.forEach(item=>{
+            html += `<div class="kb-item" data-ans="${item.answer}" onclick="copyKb(this)">
+                <strong>${item.title}</strong><br>${item.answer}
+                <button class="btn btn-red btn-sm" onclick="delKb(${item.id})">删除</button>
+            </div>`;
+        });
+        document.getElementById("kbList").innerHTML=html;
+        document.getElementById("quickKbBox").innerHTML=html;
+    }
+    function copyKb(dom){
+        let ans=dom.dataset.ans;
+        document.getElementById("msgInput").value=ans;
+    }
+    function delKb(id){
+        let list=getKnowledgeList().filter(x=>x.id!==id);
+        saveKnowledgeList(list);
+        renderKnowledge();
+    }
+
+    //==== 会话接待聊天模块 ====
+    function sendMsg(){
+        let text=document.getElementById("msgInput").value.trim();
+        if(!text)return;
+        let win=document.getElementById("chatWindow");
+        win.innerHTML += `<div class="msg-right"><span class="msg-bubble">${text}</span></div>`;
+        document.getElementById("msgInput").value="";
+        win.scrollTop=win.scrollHeight;
+    }
+    function clearChat(){
+        document.getElementById("chatWindow").innerHTML="";
+    }
+
+    //==== 外呼&短信中心 ====
+    function switchCallTab(tab){
+        document.getElementById('tabDial').classList.add('hide');
+        document.getElementById('tabSms').classList.add('hide');
+        document.getElementById('tabCallLog').classList.add('hide');
+        document.getElementById('tabSmsLog').classList.add('hide');
+        if(tab==='dial') document.getElementById('tabDial').classList.remove('hide');
+        if(tab==='sms') document.getElementById('tabSms').classList.remove('hide');
+        if(tab==='calllog') {document.getElementById('tabCallLog').classList.remove('hide');renderCallLog();}
+        if(tab==='smslog') {document.getElementById('tabSmsLog').classList.remove('hide');renderSmsLog();}
+    }
+    function appendNum(num){
+        let val=document.getElementById('callNumber').value;
+        document.getElementById('callNumber').value=val+num;
+    }
+    function clearDial(){
+        document.getElementById('callNumber').value='';
+    }
+    function getCallLog(userPhone){
+        let key="call_log_"+userPhone;
+        let d=localStorage.getItem(key);
+        return d?JSON.parse(d):[];
+    }
+    function saveCallLog(userPhone,arr){
+        let key="call_log_"+userPhone;
+        localStorage.setItem(key,JSON.stringify(arr));
+    }
+    function startCall(){
+        let num=document.getElementById('callNumber').value.trim();
+        if(!num){alert("请输入被叫号码");return;}
+        window.open('tel:'+num,'_self');
+        callStart=new Date();
+        callTimer=setInterval(()=>{},1000);
+        document.getElementById("callStatusBox").innerHTML=`<div class="call-status call-ing">通话计时已启动 · 被叫号码：${num}</div>`;
+    }
+    function hangCall(){
+        if(!callTimer){alert("当前无通话计时");return;}
+        clearInterval(callTimer);
+        callTimer=null;
+        let end=new Date();
+        let sec=Math.floor((end-callStart)/1000);
+        let h=Math.floor(sec/3600);let m=Math.floor((sec%3600)/60);let s=sec%60;
+        let duration=`${h}时${m}分${s}秒`;
+        let num=document.getElementById('callNumber').value;
+        let log=getCallLog(currentUser.phone);
+        log.push({time:formatTime(new Date()),mobile:num,duration:duration,status:"手动结束计时"});
+        saveCallLog(currentUser.phone,log);
+        document.getElementById("callStatusBox").innerHTML=`<div class="call-status call-end">通话计时结束，时长：${duration}</div>`;
+        renderCallLog();
+    }
+    function renderCallLog(){
+        let log=getCallLog(currentUser.phone);
+        let tb=document.getElementById("callLogTable");
+        tb.innerHTML=`<tr><th>时间</th><th>被叫号码</th><th>通话时长</th><th>状态</th></tr>`;
+        log.forEach(item=>{
+            let tr=document.createElement('tr');
+            tr.innerHTML=`<td>${item.time}</td><td>${item.mobile}</td><td>${item.duration}</td><td>${item.status}</td>`;
+            tb.appendChild(tr);
+        })
+    }
+    function getSmsLog(userPhone){
+        let key="sms_log_"+userPhone;
+        let d=localStorage.getItem(key);
+        return d?JSON.parse(d):[];
+    }
+    function saveSmsLog(userPhone,arr){
+        let key="sms_log_"+userPhone;
+        localStorage.setItem(key,JSON.stringify(arr));
+    }
+    function sendSms(){
+        let mobile=document.getElementById('smsMobile').value.trim();
+        let content=document.getElementById('smsContent').value.trim();
+        if(!mobile||!content){alert("手机号和短信内容不能为空");return;}
+        let log=getSmsLog(currentUser.phone);
+        log.push({sendTime:formatTime(new Date()),mobile:mobile,content:content});
+        saveSmsLog(currentUser.phone,log);
+        document.getElementById('smsMobile').value='';
+        document.getElementById('smsContent').value='';
+        alert("模拟短信发送成功！已存入短信记录");
+        renderSmsLog();
+    }
+    function renderSmsLog(){
+        let log=getSmsLog(currentUser.phone);
+        let tb=document.getElementById("smsLogTable");
+        tb.innerHTML=`<tr><th>发送时间</th><th>接收号码</th><th>短信内容</th></tr>`;
+        log.forEach(item=>{
+            let tr=document.createElement('tr');
+            tr.innerHTML=`<td>${item.sendTime}</td><td>${item.mobile}</td><td>${item.content}</td>`;
+            tb.appendChild(tr);
+        })
+    }
+
+    //================管理员后台增强函数================
+    //管理员添加客服账号
+    function adminAddWorker(){
+        let phone = document.getElementById("addKfPhone").value.trim();
+        let pwd = document.getElementById("addKfPwd").value.trim();
+        if(!/^1[3-9]\d{9}$/.test(phone)){alert("手机号格式错误");return;}
+        if(pwd.length<4){alert("密码最少4位字符");return;}
+        let list = getUserList();
+        if(list.find(x=>x.phone===phone)){alert("该客服账号已存在！");return;}
+        list.push({phone:phone,pwd:pwd,totalSec:0,hourWage:0});
+        saveUserList(list);
+        document.getElementById("addKfPhone").value="";
+        document.getElementById("addKfPwd").value="";
+        refreshAdminAllData();
+        alert("客服账号新增成功！");
+    }
+    //选中表格客服，填充到编辑框
+    function selectWorkerForEdit(phone){
+        selectEditWorkerPhone = phone;
+        document.getElementById("editKfPhone").value = phone;
+    }
+    //管理员修改客服密码
+    function adminUpdateWorkerPwd(){
+        if(!selectEditWorkerPhone){alert("请先在账号列表点击【编辑】选中客服账号");return;}
+        let newPwd = document.getElementById("editKfNewPwd").value.trim();
+        if(newPwd.length<4){alert("新密码最少4位");return;}
+        let list = getUserList();
+        let idx = list.findIndex(x=>x.phone === selectEditWorkerPhone);
+        if(idx>-1){
+            list[idx].pwd = newPwd;
+            saveUserList(list);
+            alert("客服账号密码修改成功！");
+            document.getElementById("editKfNewPwd").value="";
+        }
+        refreshAdminAllData();
+    }
+    //删除客服账号
+    function delWorker(phone){
+        if(!confirm("确定删除该客服账号，工时通话短信记录也会全部清除，不可恢复！"))return;
+        let userList=getUserList().filter(x=>x.phone!==phone);
+        saveUserList(userList);
+        localStorage.removeItem("kfHistory_"+phone);
+        localStorage.removeItem("call_log_"+phone);
+        localStorage.removeItem("sms_log_"+phone);
+        refreshAdminAllData();
+    }
+    //管理员修改自身密码
+    function changeAdminPassword(){
+        let old = document.getElementById("adminOldPwd").value.trim();
+        let np1 = document.getElementById("adminNewPwd1").value.trim();
+        let np2 = document.getElementById("adminNewPwd2").value.trim();
+        let admin = getAdminInfo();
+        if(old !== admin.pwd){alert("旧密码输入错误！");return;}
+        if(np1.length<4){alert("新密码长度至少4位");return;}
+        if(np1!==np2){alert("两次输入的新密码不一致！");return;}
+        admin.pwd = np1;
+        localStorage.setItem("adminInfo",JSON.stringify(admin));
+        alert("管理员密码修改成功！请使用新密码重新登录");
+        adminLogout();
+    }
+
+    function refreshAdminAllData(){
+        renderAdminUserList();
+        refreshAllWorkerRecord();
+        renderAdminAllCallLog();
+        renderAdminAllSmsLog();
+        renderAdminKnowledge();
+    }
+    function renderAdminUserList(){
+        let userList=getUserList();
+        let table=document.getElementById("adminUserTable");
+        table.innerHTML=`<tr><th>序号</th><th>客服手机号</th><th>累计总工时(小时)</th><th>设置时薪单价</th><th>预估总收入</th><th>操作</th></tr>`;
+        userList.forEach((u,i)=>{
+            let totalHour=(u.totalSec/3600).toFixed(2);
+            let income=(totalHour*u.hourWage).toFixed(2);
+            let tr=document.createElement("tr");
+            tr.innerHTML=`<td>${i+1}</td>
+            <td>${u.phone}</td>
+            <td>${totalHour}</td>
+            <td>${u.hourWage}</td>
+            <td>${income}</td>
+            <td>
+                <button class="btn btn-orange btn-sm" onclick="selectWorkerForEdit('${u.phone}')">编辑密码</button>
+                <button class="btn btn-red btn-sm" onclick="delWorker('${u.phone}')">删除账号</button>
+            </td>`;
+            table.appendChild(tr);
+        })
+    }
+    function refreshAllWorkerRecord(){
+        let userList=getUserList();
+        let filterPhone=document.getElementById("filterWorkerPhone")?.value.trim()||"";
+        let table=document.getElementById("adminWorkTable");
+        table.innerHTML=`<tr><th>客服手机号</th><th>上班时间</th><th>下班时间</th><th>工时(小时)</th><th>对应工资</th></tr>`;
+        userList.forEach(u=>{
+            if(filterPhone && u.phone!==filterPhone) return;
+            let records=getHistory(u.phone);
+            records.forEach(r=>{
+                let wage=r.hours*u.hourWage;
+                let tr=document.createElement('tr');
+                tr.innerHTML=`<td>${u.phone}</td><td>${r.start}</td><td>${r.end}</td><td>${r.hours}</td><td>${wage.toFixed(2)}</td>`;
+                table.appendChild(tr);
+            })
+        })
+    }
+    function renderAdminAllCallLog(){
+        let userList=getUserList();
+        let table=document.getElementById("adminCallTable");
+        table.innerHTML=`<tr><th>客服手机号</th><th>呼叫时间</th><th>被叫号码</th><th>通话计时时长</th><th>状态</th></tr>`;
+        userList.forEach(u=>{
+            let callList=getCallLog(u.phone);
+            callList.forEach(c=>{
+                let tr=document.createElement("tr");
+                tr.innerHTML=`<td>${u.phone}</td><td>${c.time}</td><td>${c.mobile}</td><td>${c.duration}</td><td>${c.status}</td>`;
+                table.appendChild(tr);
+            })
+        })
+    }
+    function renderAdminAllSmsLog(){
+        let userList=getUserList();
+        let table=document.getElementById("adminSmsTable");
+        table.innerHTML=`<tr><th>客服手机号</th><th>发送时间</th><th>接收号码</th><th>短信内容</th></tr>`;
+        userList.forEach(u=>{
+            let smsList=getSmsLog(u.phone);
+            smsList.forEach(s=>{
+                let tr=document.createElement("tr");
+                tr.innerHTML=`<td>${u.phone}</td><td>${s.sendTime}</td><td>${s.mobile}</td><td>${s.content}</td>`;
+                table.appendChild(tr);
+            })
+        })
+    }
+    function renderAdminKnowledge(){
+        let list=getKnowledgeList();
+        let box=document.getElementById("adminKbBox");
+        let html="";
+        list.forEach(item=>{
+            html += `<div class="kb-item">
+                <strong>${item.title}</strong><br>${item.answer}
+                <button class="btn btn-red btn-sm" onclick="delKb(${item.id});refreshAdminAllData();">删除词条</button>
+            </div>`;
+        })
+        box.innerHTML=html;
+    }
+
+    //管理员导出全部数据
+    function adminExportAllWorkRecord(){
+        let userList=getUserList();
+        let csv="\uFEFF客服手机号,上班时间,下班时间,工时小时,时薪,工资\n";
+        userList.forEach(u=>{
+            let his=getHistory(u.phone);
+            his.forEach(h=>{
+                let pay=(h.hours*u.hourWage).toFixed(2);
+                csv += `${u.phone},${h.start},${h.end},${h.hours},${u.hourWage},${pay}\n`;
+            })
+        })
+        downloadCsv(csv,"全部客服工时打卡记录");
+    }
+    function adminExportAllCall(){
+        let userList=getUserList();
+        let csv="\uFEFF客服手机号,呼叫时间,被叫号码,通话时长,状态\n";
+        userList.forEach(u=>{
+            let arr=getCallLog(u.phone);
+            arr.forEach(c=>{
+                csv += `${u.phone},${c.time},${c.mobile},${c.duration},${c.status}\n`;
+            })
+        })
+        downloadCsv(csv,"全部客服通话记录");
+    }
+    function adminExportAllSms(){
+        let userList=getUserList();
+        let csv="\uFEFF客服手机号,发送时间,接收号码,短信内容\n";
+        userList.forEach(u=>{
+            let arr=getSmsLog(u.phone);
+            arr.forEach(s=>{
+                csv += `${u.phone},${s.sendTime},${s.mobile},${s.content}\n`;
+            })
+        })
+        downloadCsv(csv,"全部客服短信记录");
+    }
+    function downloadCsv(text,filename){
+        let blob = new Blob([text],{type:'text/csv;charset=utf-8;'});
+        let url = URL.createObjectURL(blob);
+        let a = document.createElement('a');
+        a.href=url;
+        a.download=filename+"_"+formatTime(new Date()).replace(/[: ]/g,'-')+".csv";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        alert("导出成功！");
+    }
+</script>
+</body>
+</html>
